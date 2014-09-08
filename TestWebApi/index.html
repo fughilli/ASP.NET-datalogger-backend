@@ -21,6 +21,16 @@
                 dataArrived = true;
                 return;
             }
+
+            // If there are no data elements
+            if (dataArray.length <= 1)
+            {
+                // Put a boldfaced "No data!" message into the chart_div
+                var chartDiv = $('#chart_div');
+                chartDiv.append('<p><b>No data!</b><br/>&nbsp;Try reloading the page. There will probably be something to see here soon!</p>');
+                return;
+            }
+
             var data = google.visualization.arrayToDataTable(dataArray);
 
             var options = {

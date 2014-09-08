@@ -13,7 +13,7 @@ namespace TestWebApi
         public class datapoint
         {
             public int time;
-            public int value;
+            public double value;
         }
 
         public static List<datapoint> datapoints = InitDatapoints();
@@ -21,8 +21,6 @@ namespace TestWebApi
         private static List<datapoint> InitDatapoints()
         {
             List<datapoint> ret = new List<datapoint>();
-            ret.Add(new datapoint { time = 0, value = 1 });
-            ret.Add(new datapoint { time = 1, value = 2 });
             return ret;
         }
 
@@ -36,7 +34,7 @@ namespace TestWebApi
             // If the index is positive, return the zero-indexed element from datapoints
             if (index >= 0 && index < datapoints.Count)
             {
-                return Request.CreateResponse(HttpStatusCode.Found, datapoints[index]);
+                return Request.CreateResponse(HttpStatusCode.OK, datapoints[index]);
             }
             else
             {
@@ -44,45 +42,47 @@ namespace TestWebApi
                 if ((datapoints.Count + index) >= 0)
                 {
                     // Return the element zero-indexed from the end of datapoints by (1-index)
-                    return Request.CreateResponse(HttpStatusCode.Found, datapoints[datapoints.Count + index]);
-                }
-                else
-                {
-                    // The indexed element does not exist!
-                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, "That datapoint does not exist");
+                    return Request.CreateResponse(HttpStatusCode.OK, datapoints[datapoints.Count + index]);
                 }
             }
+            // The indexed element does not exist!
+            return Request.CreateErrorResponse(HttpStatusCode.RequestedRangeNotSatisfiable, "That datapoint does not exist");
         }
 
         public HttpResponseMessage Get([FromUri]int index, [FromUri]int count)
         {
-            //// If the index is positive, return the zero-indexed element from datapoints
-            //if (index >= 0 && index < datapoints.Count)
-            //{
-            //    return Request.CreateResponse(HttpStatusCode.Found, datapoints[index]);
-            //}
-            //else
-            //{
-            //    // If the index is negative, and the negative index does not underflow
-            //    if ((datapoints.Count + index) >= 0)
-            //    {
-            //        // Return the element zero-indexed from the end of datapoints by (1-index)
-            //        return Request.CreateResponse(HttpStatusCode.Found, datapoints[datapoints.Count + index]);
-            //    }
-            //    else
-            //    {
-            //        // The indexed element does not exist!
-            //        return Request.CreateErrorResponse(HttpStatusCode.NotFound, "That datapoint does not exist");
-            //    }
-            //}
+            // If the index is positive, return the zero-indexed element from datapoints and count-1 elements after it
             if (index >= 0 && index < datapoints.Count)
             {
-                return Request.CreateResponse(HttpStatusCode.Found, datapoints.GetRange(index, count));
+                if ((index + count) < datapoints.Count)
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, datapoints.GetRange(index, count));
+                }
+                else
+                {
+                    // The specified range is invalid
+                    return Request.CreateErrorResponse(HttpStatusCode.RequestedRangeNotSatisfiable, "The specified range is invalid");
+                }
             }
             else
             {
-                return Request.CreateErrorResponse(HttpStatusCode.NotFound, "That datapoint does not exist");
+                // If the index is negative, and the negative index does not underflow
+                if ((datapoints.Count + index) >= 0)
+                {
+                    if ((index + count) < 0)
+                    {
+                        // Return the element zero-indexed from the end of datapoints by (1-index)
+                        return Request.CreateResponse(HttpStatusCode.OK, datapoints.GetRange(datapoints.Count + index, count));
+                    }
+                    else
+                    {
+                        // The specified range is invalid
+                        return Request.CreateErrorResponse(HttpStatusCode.RequestedRangeNotSatisfiable, "The specified range is invalid");
+                    }
+                }
             }
+            // The indexed element does not exist!
+            return Request.CreateErrorResponse(HttpStatusCode.RequestedRangeNotSatisfiable, "The start datapoint is out of range");
         }
 
         public void Post([FromBody]datapoint d)
