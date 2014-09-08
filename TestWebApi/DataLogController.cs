@@ -13,7 +13,7 @@ namespace TestWebApi
         public class datapoint
         {
             public int time;
-            public double value;
+            public float value;
         }
 
         public static List<datapoint> datapoints = InitDatapoints();
