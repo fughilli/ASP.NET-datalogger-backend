@@ -1,14 +1,17 @@
 ﻿<!DOCTYPE html>
-
 <html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>Hello</title>
+    <title>Kevin's Datalogger</title>
 </head>
 <body>
+    <div style="text-align: center; font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;">
+        <a><font size="32">Kevin Balke's Datalogger</font></a>
+        <p>This webpage displays a chart populated with data samples POSTed by an Arduino UNO. Reload the page to see it change!</p>
+    </div>
+    <hr size="0" width="80%" noshade />
     <script type="text/javascript" src="/scripts/jquery-2.1.1.min.js"></script>
-
     <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['corechart']}]}"></script>
     <script>
         var dataArray = [['time', 'value']];
@@ -23,8 +26,7 @@
             }
 
             // If there are no data elements
-            if (dataArray.length <= 1)
-            {
+            if (dataArray.length <= 1) {
                 // Put a boldfaced "No data!" message into the chart_div
                 var chartDiv = $('#chart_div');
                 chartDiv.append('<p><b>No data!</b><br/>&nbsp;Try reloading the page. There will probably be something to see here soon!</p>');
@@ -43,10 +45,10 @@
         }
 
         $(function () {
-
+            var datapointsToGrab = 628;
 
             $.ajax({
-                url: '/DataLog',
+                url: '/DataLog?index=-' + datapointsToGrab + '&count=' + datapointsToGrab + '&strict=false',
                 dataType: 'json',
                 success: function (datapoints) {
                     $.each(datapoints, function (index, item) {
@@ -54,7 +56,7 @@
                     });
 
                     // If drawChart() was called first
-                    if (dataArrived){
+                    if (dataArrived) {
                         drawChart();
                         return;
                     }
@@ -64,7 +66,6 @@
             });
         });
     </script>
-
 
     <div id="chart_div" style="width: 900px; height: 500px;"></div>
 </body>
