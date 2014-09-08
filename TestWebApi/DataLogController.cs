@@ -10,6 +10,11 @@ namespace TestWebApi
 {
     public class DataLogController : ApiController
     {
+        private static readonly string MESSAGE_DATAPOINT_NOT_FOUND = "That datapoint does not exist.";
+        private static readonly string MESSAGE_INVALID_RANGE = "The specified range is invalid.";
+        private static readonly string MESSAGE_INVALID_START_INDEX = "The start datapoint is out of range.";
+        private static readonly string MESSAGE_INVALID_JSON = "The provided JSON object is invalid.";
+
         public class datapoint
         {
             public int time;
@@ -34,7 +39,9 @@ namespace TestWebApi
             // If the index is positive, return the zero-indexed element from datapoints
             if (index >= 0 && index < datapoints.Count)
             {
-                return Request.CreateResponse(HttpStatusCode.OK, datapoints[index]);
+                return Request.CreateResponse(
+                    HttpStatusCode.OK,
+                    datapoints[index]);
             }
             else
             {
@@ -42,52 +49,104 @@ namespace TestWebApi
                 if ((datapoints.Count + index) >= 0)
                 {
                     // Return the element zero-indexed from the end of datapoints by (1-index)
-                    return Request.CreateResponse(HttpStatusCode.OK, datapoints[datapoints.Count + index]);
+                    return Request.CreateResponse(
+                        HttpStatusCode.OK,
+                        datapoints[datapoints.Count + index]);
                 }
             }
             // The indexed element does not exist!
-            return Request.CreateErrorResponse(HttpStatusCode.RequestedRangeNotSatisfiable, "That datapoint does not exist");
+            return Request.CreateErrorResponse(
+                HttpStatusCode.RequestedRangeNotSatisfiable,
+                MESSAGE_DATAPOINT_NOT_FOUND);
         }
 
-        public HttpResponseMessage Get([FromUri]int index, [FromUri]int count)
+        public HttpResponseMessage Get([FromUri]int index, [FromUri]int count, [FromUri]bool strict)
         {
-            // If the index is positive, return the zero-indexed element from datapoints and count-1 elements after it
-            if (index >= 0 && index < datapoints.Count)
+            // strict means that the returned enumerable has to be of length count
+            // if strict is disabled, only the total available elements after index
+            // such that length <= count will be returned
+
+            try
             {
-                if ((index + count) < datapoints.Count)
+                // If the index is positive, in range, and count is greater than 0, 
+                // return the zero-indexed element and count-1 elements after it from datapoints
+                if (index >= 0 && index < datapoints.Count && count >= 1)
                 {
-                    return Request.CreateResponse(HttpStatusCode.OK, datapoints.GetRange(index, count));
-                }
-                else
-                {
-                    // The specified range is invalid
-                    return Request.CreateErrorResponse(HttpStatusCode.RequestedRangeNotSatisfiable, "The specified range is invalid");
-                }
-            }
-            else
-            {
-                // If the index is negative, and the negative index does not underflow
-                if ((datapoints.Count + index) >= 0)
-                {
-                    if ((index + count) < 0)
+                    if (strict)
                     {
-                        // Return the element zero-indexed from the end of datapoints by (1-index)
-                        return Request.CreateResponse(HttpStatusCode.OK, datapoints.GetRange(datapoints.Count + index, count));
+                        if ((index + count) < datapoints.Count)
+                        {
+                            return Request.CreateResponse(
+                                HttpStatusCode.OK,
+                                datapoints.GetRange(index, count));
+                        }
                     }
                     else
                     {
-                        // The specified range is invalid
-                        return Request.CreateErrorResponse(HttpStatusCode.RequestedRangeNotSatisfiable, "The specified range is invalid");
+                        // not strict, return what's available
+                        return Request.CreateResponse(
+                            HttpStatusCode.OK,
+                            datapoints.GetRange(index, Math.Min(count, datapoints.Count - index)));
+                    }
+                }
+                // If the index is negative 
+                if (index < 0)
+                {
+                    if (strict)
+                    {
+                        // if the negative index does not underflow
+                        if ((datapoints.Count + index) >= 0)
+                        {
+                            if ((index + count) < 0)
+                            {
+                                // Return the element zero-indexed from the end of datapoints by (1-index)
+                                return Request.CreateResponse(
+                                    HttpStatusCode.OK,
+                                    datapoints.GetRange(datapoints.Count + index, count));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        int startIndex = Math.Max(0, datapoints.Count + index);
+                        int rangeCount = 1;
+                        if (startIndex > 0)
+                        { 
+                            rangeCount = Math.Min(count, -index);
+                        }
+                        else
+                        {
+                            rangeCount = Math.Min(count, datapoints.Count);
+                        }
+                        // Not strict, return what's available
+                        return Request.CreateResponse(
+                                HttpStatusCode.OK,
+                                datapoints.GetRange(startIndex, rangeCount));
                     }
                 }
             }
+            catch (Exception e)
+            {
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.InternalServerError,
+                    e.Message);
+            }
             // The indexed element does not exist!
-            return Request.CreateErrorResponse(HttpStatusCode.RequestedRangeNotSatisfiable, "The start datapoint is out of range");
+            return Request.CreateErrorResponse(
+                HttpStatusCode.RequestedRangeNotSatisfiable,
+                MESSAGE_INVALID_START_INDEX);
         }
 
-        public void Post([FromBody]datapoint d)
+        public HttpResponseMessage Post([FromBody]datapoint d)
         {
-            datapoints.Add(d);
+            if (d != null && !float.IsNaN(d.value))
+            {
+                datapoints.Add(d);
+                return Request.CreateResponse(HttpStatusCode.OK);
+            }
+            return Request.CreateErrorResponse(
+                HttpStatusCode.BadRequest,
+                MESSAGE_INVALID_JSON);
         }
     }
 }
