@@ -7,35 +7,55 @@
     <title>Hello</title>
 </head>
 <body>
-    <ol id="datapoints"></ol>
     <script type="text/javascript" src="/scripts/jquery-2.1.1.min.js"></script>
+
+    <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['corechart']}]}"></script>
     <script>
+        var dataArray = [['time', 'value']];
+        var dataArrived = false;
+
+        google.setOnLoadCallback(drawChart);
+        function drawChart() {
+            if (!dataArrived) {
+                // Signal the AJAX success handler to call drawChart()
+                dataArrived = true;
+                return;
+            }
+            var data = google.visualization.arrayToDataTable(dataArray);
+
+            var options = {
+                title: 'readings'
+            };
+
+            var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+
+            chart.draw(data, options);
+        }
+
         $(function () {
+
+
             $.ajax({
                 url: '/DataLog',
                 dataType: 'json',
                 success: function (datapoints) {
-                    var list = $('#datapoints');
                     $.each(datapoints, function (index, item) {
-                        list.append('<li> time: ' + item.time + ', value: ' + item.value + '</li>');
+                        dataArray[dataArray.length] = [item.time, item.value];
                     });
+
+                    // If drawChart() was called first
+                    if (dataArrived){
+                        drawChart();
+                        return;
+                    }
+
+                    dataArrived = true;
                 }
             });
-            //$.ajax({
-            //    url: 'http://api.twitter.com/1/statuses/public_timeline.json',
-            //    dataType: 'json',
-            //    success: function (data) {
-            //        alert(data.error[0].message);
-            //    },
-            //    error: function (request, textStatus, errorThrown) {
-            //        alert(textStatus);
-            //    },
-            //    complete: function (request, textStatus) {
-            //        alert(request.responseText);
-            //        alert(textStatus);
-            //    }
-            //});
         });
     </script>
+
+
+    <div id="chart_div" style="width: 900px; height: 500px;"></div>
 </body>
 </html>
