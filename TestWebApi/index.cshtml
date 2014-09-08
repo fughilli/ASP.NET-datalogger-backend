@@ -1,0 +1,45 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Hello</title>
+</head>
+<body>
+    <ol id="datapoints"></ol>
+    <script type="text/javascript" src="/scripts/jquery-2.1.1.min.js"></script>
+    <script>
+        $(function () {
+            $.ajax({
+                url: '/DataLog',
+                dataType: 'json',
+                success: function (datapoints) {
+                    var list = $('#datapoints');
+                    $.each(datapoints, function (index, item) {
+                        list.append('<li> time: ' + item.time + ', value: ' + item.value + '</li>');
+                    });
+                }
+            });
+            //$.ajax({
+            //    url: 'http://api.twitter.com/1/statuses/public_timeline.json',
+            //    dataType: 'json',
+            //    success: function (data) {
+            //        alert(data.error[0].message);
+            //    },
+            //    error: function (request, textStatus, errorThrown) {
+            //        alert(textStatus);
+            //    },
+            //    complete: function (request, textStatus) {
+            //        alert(request.responseText);
+            //        alert(textStatus);
+            //    }
+            //});
+        });
+    </script>
+</body>
+</html>

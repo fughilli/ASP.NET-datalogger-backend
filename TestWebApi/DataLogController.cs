@@ -28,23 +28,61 @@ namespace TestWebApi
 
         public HttpResponseMessage Get()
         {
-            return Request.CreateResponse(HttpStatusCode.Found, datapoints);
+            return Request.CreateResponse(HttpStatusCode.OK, datapoints);
         }
 
         public HttpResponseMessage Get([FromUri]int index)
         {
-            if (index > 0 && index < datapoints.Count)
+            // If the index is positive, return the zero-indexed element from datapoints
+            if (index >= 0 && index < datapoints.Count)
+            {
                 return Request.CreateResponse(HttpStatusCode.Found, datapoints[index]);
+            }
             else
-                return Request.CreateErrorResponse(HttpStatusCode.NotFound, "That datapoint does not exist");
+            {
+                // If the index is negative, and the negative index does not underflow
+                if ((datapoints.Count + index) >= 0)
+                {
+                    // Return the element zero-indexed from the end of datapoints by (1-index)
+                    return Request.CreateResponse(HttpStatusCode.Found, datapoints[datapoints.Count + index]);
+                }
+                else
+                {
+                    // The indexed element does not exist!
+                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, "That datapoint does not exist");
+                }
+            }
         }
 
         public HttpResponseMessage Get([FromUri]int index, [FromUri]int count)
         {
-            if (index > 0 && index < datapoints.Count)
+            //// If the index is positive, return the zero-indexed element from datapoints
+            //if (index >= 0 && index < datapoints.Count)
+            //{
+            //    return Request.CreateResponse(HttpStatusCode.Found, datapoints[index]);
+            //}
+            //else
+            //{
+            //    // If the index is negative, and the negative index does not underflow
+            //    if ((datapoints.Count + index) >= 0)
+            //    {
+            //        // Return the element zero-indexed from the end of datapoints by (1-index)
+            //        return Request.CreateResponse(HttpStatusCode.Found, datapoints[datapoints.Count + index]);
+            //    }
+            //    else
+            //    {
+            //        // The indexed element does not exist!
+            //        return Request.CreateErrorResponse(HttpStatusCode.NotFound, "That datapoint does not exist");
+            //    }
+            //}
+            if (index >= 0 && index < datapoints.Count)
+            {
                 return Request.CreateResponse(HttpStatusCode.Found, datapoints.GetRange(index, count));
+            }
             else
+            {
                 return Request.CreateErrorResponse(HttpStatusCode.NotFound, "That datapoint does not exist");
+            }
         }
 
         public void Post([FromBody]datapoint d)
